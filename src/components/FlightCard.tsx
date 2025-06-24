@@ -55,7 +55,9 @@ export const FlightCard = ({ flight, rank }: FlightCardProps) => {
             </div>
 
             <div className="text-right">
-              <div className="text-3xl font-bold text-white">${flight.price}</div>
+              <div className="text-3xl font-bold text-white">
+                {flight.currencySymbol || "$"}{flight.price}
+              </div>
               <div className="text-sm text-slate-400">per person</div>
             </div>
           </div>

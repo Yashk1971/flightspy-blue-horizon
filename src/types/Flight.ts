@@ -16,4 +16,5 @@ export interface Flight {
     date: string;
   };
   bookingUrl: string;
+  currencySymbol?: string;
 }

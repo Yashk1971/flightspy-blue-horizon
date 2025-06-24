@@ -1,6 +1,4 @@
 
-import { Plane } from "lucide-react";
-
 export const HeroSection = () => {
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-24 sm:py-32">
@@ -12,12 +10,16 @@ export const HeroSection = () => {
       <div className="relative container mx-auto px-4 text-center">
         <div className="flex justify-center mb-6">
           <div className="p-4 bg-blue-500/20 rounded-full backdrop-blur-sm border border-blue-500/30">
-            <Plane className="h-8 w-8 text-blue-400" />
+            <img 
+              src="/lovable-uploads/2538067e-a322-48a0-8394-2f7e8f270cd2.png" 
+              alt="Farely Logo" 
+              className="h-8 w-8 object-contain filter brightness-0 invert"
+            />
           </div>
         </div>
         
         <h1 className="text-5xl sm:text-7xl font-bold text-white mb-6 tracking-tight">
-          Flight<span className="text-blue-400">Spy</span>
+          Fare<span className="text-blue-400">ly</span>
         </h1>
         
         <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
