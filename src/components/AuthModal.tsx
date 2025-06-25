@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,12 +16,14 @@ interface AuthModalProps {
 
 export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
     country: ""
   });
+  const { toast } = useToast();
 
   const countries = [
     { code: "US", name: "United States", currency: "USD" },
@@ -31,14 +35,75 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
     { code: "IN", name: "India", currency: "INR" },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedCountry = countries.find(c => c.code === formData.country);
-    onAuth({
-      ...formData,
-      currency: selectedCountry?.currency || "USD"
-    });
-    onClose();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) {
+          toast({
+            title: "Login Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          const selectedCountry = countries.find(c => c.code === (data.user?.user_metadata?.country || 'US'));
+          onAuth({
+            ...formData,
+            currency: selectedCountry?.currency || "USD"
+          });
+          onClose();
+        }
+      } else {
+        const selectedCountry = countries.find(c => c.code === formData.country);
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              name: formData.name,
+              country: formData.country,
+              currency: selectedCountry?.currency || "USD"
+            }
+          }
+        });
+
+        if (error) {
+          toast({
+            title: "Sign Up Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account.",
+          });
+          onAuth({
+            ...formData,
+            currency: selectedCountry?.currency || "USD"
+          });
+          onClose();
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -110,8 +175,9 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            disabled={loading}
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
           </Button>
 
           <div className="text-center">

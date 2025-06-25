@@ -9,7 +9,77 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          country: string | null
+          created_at: string
+          currency: string | null
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      search_history: {
+        Row: {
+          arrival_location: string | null
+          created_at: string
+          departure_date: string | null
+          departure_location: string | null
+          id: string
+          passengers: number | null
+          return_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          arrival_location?: string | null
+          created_at?: string
+          departure_date?: string | null
+          departure_location?: string | null
+          id?: string
+          passengers?: number | null
+          return_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          arrival_location?: string | null
+          created_at?: string
+          departure_date?: string | null
+          departure_location?: string | null
+          id?: string
+          passengers?: number | null
+          return_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

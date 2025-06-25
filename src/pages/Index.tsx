@@ -1,48 +1,111 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { SearchForm } from "@/components/SearchForm";
 import { FlightResults } from "@/components/FlightResults";
 import { HeroSection } from "@/components/HeroSection";
-import { AuthModal } from "@/components/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
+import { searchFlights, transformKiwiDataToFlight } from "@/services/kiwiApi";
+import { supabase } from "@/integrations/supabase/client";
 import { Flight } from "@/types/Flight";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSearchClick = () => {
-    if (!user) {
-      setShowAuthModal(true);
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (data) {
+          setUserProfile(data);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  const handleSearch = async (searchData: any) => {
+    if (!user || !userProfile) {
+      navigate('/auth');
       return;
     }
-    // If user is authenticated, proceed with search
-    handleSearch();
-  };
 
-  const handleAuth = (userData: any) => {
-    setUser(userData);
-    console.log("User authenticated:", userData);
-  };
-
-  const handleSearch = async (searchData?: any) => {
     setLoading(true);
     setHasSearched(true);
     
-    // Get currency symbol based on user's country
-    const getCurrencySymbol = (currency: string) => {
-      const symbols: { [key: string]: string } = {
-        USD: "$", GBP: "£", EUR: "€", CAD: "C$", AUD: "A$", JPY: "¥", INR: "₹"
+    try {
+      // Get currency symbol based on user's currency
+      const getCurrencySymbol = (currency: string) => {
+        const symbols: { [key: string]: string } = {
+          USD: "$", GBP: "£", EUR: "€", CAD: "C$", AUD: "A$", JPY: "¥", INR: "₹"
+        };
+        return symbols[currency] || "$";
       };
-      return symbols[currency] || "$";
-    };
 
-    const currencySymbol = user ? getCurrencySymbol(user.currency) : "$";
-    
-    // Simulate API call with mock data
-    setTimeout(() => {
+      const currencySymbol = getCurrencySymbol(userProfile.currency);
+
+      // Save search to history
+      await supabase.from('search_history').insert({
+        user_id: user.id,
+        departure_location: searchData.departure,
+        arrival_location: searchData.arrival,
+        departure_date: searchData.departureDate,
+        return_date: searchData.returnDate,
+        passengers: searchData.passengers || 1
+      });
+
+      // Search flights using Kiwi API
+      const kiwiResults = await searchFlights({
+        departure: searchData.departure,
+        arrival: searchData.arrival,
+        departureDate: searchData.departureDate,
+        returnDate: searchData.returnDate,
+        passengers: searchData.passengers,
+        currency: userProfile.currency
+      });
+
+      // Transform Kiwi data to our Flight interface
+      const transformedFlights = kiwiResults.map((kiwiFlight: any) => 
+        transformKiwiDataToFlight(kiwiFlight, currencySymbol)
+      );
+
+      setFlights(transformedFlights);
+      
+      if (transformedFlights.length === 0) {
+        toast({
+          title: "No flights found",
+          description: "Try adjusting your search criteria or dates.",
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search Error",
+        description: "Unable to search flights at the moment. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Fallback to mock data for demo purposes
       const mockFlights: Flight[] = [
         {
           id: "1",
@@ -61,98 +124,53 @@ const Index = () => {
             date: searchData?.departureDate || "2024-01-15"
           },
           bookingUrl: "https://kiwi.com/flight/delta-299",
-          currencySymbol
-        },
-        {
-          id: "2",
-          airline: "American Airlines",
-          price: 324,
-          duration: "4h 45m",
-          stops: 1,
-          departure: {
-            time: "10:15",
-            airport: searchData?.departure || "JFK",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          arrival: {
-            time: "17:00",
-            airport: searchData?.arrival || "LAX",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          bookingUrl: "https://kiwi.com/flight/american-324",
-          currencySymbol
-        },
-        {
-          id: "3",
-          airline: "United Airlines",
-          price: 356,
-          duration: "6h 15m",
-          stops: 1,
-          departure: {
-            time: "14:30",
-            airport: searchData?.departure || "JFK",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          arrival: {
-            time: "22:45",
-            airport: searchData?.arrival || "LAX",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          bookingUrl: "https://kiwi.com/flight/united-356",
-          currencySymbol
-        },
-        {
-          id: "4",
-          airline: "JetBlue Airways",
-          price: 378,
-          duration: "5h 20m",
-          stops: 0,
-          departure: {
-            time: "16:45",
-            airport: searchData?.departure || "JFK",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          arrival: {
-            time: "22:05",
-            airport: searchData?.arrival || "LAX",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          bookingUrl: "https://kiwi.com/flight/jetblue-378",
-          currencySymbol
-        },
-        {
-          id: "5",
-          airline: "Southwest Airlines",
-          price: 412,
-          duration: "7h 30m",
-          stops: 2,
-          departure: {
-            time: "06:30",
-            airport: searchData?.departure || "JFK",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          arrival: {
-            time: "16:00",
-            airport: searchData?.arrival || "LAX",
-            date: searchData?.departureDate || "2024-01-15"
-          },
-          bookingUrl: "https://kiwi.com/flight/southwest-412",
-          currencySymbol
+          currencySymbol: getCurrencySymbol(userProfile?.currency || 'USD')
         }
       ];
-      
       setFlights(mockFlights);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to auth page
+  }
 
   return (
     <div className="min-h-screen bg-slate-900">
+      {/* Header with user info and sign out */}
+      <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
+        <div className="text-white">
+          Welcome, {userProfile?.name || user.email}
+        </div>
+        <Button 
+          onClick={handleSignOut}
+          variant="outline"
+          className="text-white border-slate-600 hover:bg-slate-700"
+        >
+          Sign Out
+        </Button>
+      </div>
+
       {!hasSearched ? (
         <>
           <HeroSection />
           <div className="container mx-auto px-4 pb-16">
-            <SearchForm onSearch={handleSearchClick} loading={loading} />
+            <SearchForm onSearch={handleSearch} loading={loading} />
           </div>
         </>
       ) : (
@@ -163,12 +181,6 @@ const Index = () => {
           <FlightResults flights={flights} loading={loading} />
         </div>
       )}
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)}
-        onAuth={handleAuth}
-      />
     </div>
   );
 };
