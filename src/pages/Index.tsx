@@ -20,6 +20,14 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency: string) => {
+    const symbols: { [key: string]: string } = {
+      USD: "$", GBP: "£", EUR: "€", CAD: "C$", AUD: "A$", JPY: "¥", INR: "₹"
+    };
+    return symbols[currency] || "$";
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
@@ -54,14 +62,6 @@ const Index = () => {
     setHasSearched(true);
     
     try {
-      // Get currency symbol based on user's currency
-      const getCurrencySymbol = (currency: string) => {
-        const symbols: { [key: string]: string } = {
-          USD: "$", GBP: "£", EUR: "€", CAD: "C$", AUD: "A$", JPY: "¥", INR: "₹"
-        };
-        return symbols[currency] || "$";
-      };
-
       const currencySymbol = getCurrencySymbol(userProfile.currency);
 
       // Save search to history
@@ -155,12 +155,13 @@ const Index = () => {
       {/* Header with user info and sign out */}
       <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
         <div className="text-white">
-          Welcome, {userProfile?.name || user.email}
+          Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
         </div>
         <Button 
           onClick={handleSignOut}
           variant="outline"
-          className="text-white border-slate-600 hover:bg-slate-700"
+          size="sm"
+          className="text-white border-slate-600 hover:bg-slate-700 hover:text-white"
         >
           Sign Out
         </Button>
