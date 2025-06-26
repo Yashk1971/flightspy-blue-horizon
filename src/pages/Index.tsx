@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { SearchForm } from "@/components/SearchForm";
 import { FlightResults } from "@/components/FlightResults";
 import { HeroSection } from "@/components/HeroSection";
+import { AuthModal } from "@/components/AuthModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { searchFlights, transformKiwiDataToFlight } from "@/services/kiwiApi";
@@ -17,6 +18,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, loading: authLoading, signOut } = useAuth();
   const { subscribed, subscription_tier } = useSubscription();
   const navigate = useNavigate();
@@ -29,12 +31,6 @@ const Index = () => {
     };
     return symbols[currency] || "$";
   };
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -77,8 +73,13 @@ const Index = () => {
   }, [toast]);
 
   const handleSearch = async (searchData: any) => {
-    if (!user || !userProfile) {
-      navigate('/auth');
+    // Show auth modal if user is not authenticated
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!userProfile) {
       return;
     }
 
@@ -159,7 +160,14 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth');
+    setHasSearched(false);
+    setFlights([]);
+    setUserProfile(null);
+  };
+
+  const handleAuthSuccess = (userData: any) => {
+    setShowAuthModal(false);
+    // User will be automatically updated via the auth context
   };
 
   if (authLoading) {
@@ -170,33 +178,31 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to auth page
-  }
-
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header with user info and sign out */}
-      <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="text-white">
-            Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
-          </div>
-          {subscribed && (
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-white text-xs font-medium">
-              Pro Member
+      {user && (
+        <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="text-white">
+              Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
             </div>
-          )}
+            {subscribed && (
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-white text-xs font-medium">
+                Pro Member
+              </div>
+            )}
+          </div>
+          <Button 
+            onClick={handleSignOut}
+            variant="outline"
+            size="sm"
+            className="text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white bg-slate-800"
+          >
+            Sign Out
+          </Button>
         </div>
-        <Button 
-          onClick={handleSignOut}
-          variant="outline"
-          size="sm"
-          className="text-white border-slate-600 hover:bg-slate-700 hover:text-white"
-        >
-          Sign Out
-        </Button>
-      </div>
+      )}
 
       {!hasSearched ? (
         <>
@@ -213,6 +219,13 @@ const Index = () => {
           <FlightResults flights={flights} loading={loading} />
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        onAuth={handleAuthSuccess}
+      />
     </div>
   );
 };

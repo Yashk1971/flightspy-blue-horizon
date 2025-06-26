@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Plane } from "lucide-react";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,6 +32,28 @@ export const AuthPage = () => {
     { code: "IN", name: "India", currency: "INR" },
   ];
 
+  // Password validation
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return {
+      isValid: minLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar,
+      errors: [
+        !minLength && "At least 8 characters",
+        !hasUppercase && "One uppercase letter",
+        !hasLowercase && "One lowercase letter", 
+        !hasNumber && "One number",
+        !hasSpecialChar && "One special character (!@#$%^&*)"
+      ].filter(Boolean)
+    };
+  };
+
+  const passwordValidation = validatePassword(formData.password);
+
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
@@ -44,6 +67,16 @@ export const AuthPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isLogin && !passwordValidation.isValid) {
+      toast({
+        title: "Password requirements not met",
+        description: "Please ensure your password meets all requirements.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -114,11 +147,7 @@ export const AuthPage = () => {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-blue-500/20 rounded-full backdrop-blur-sm border border-blue-500/30">
-              <img 
-                src="/lovable-uploads/2538067e-a322-48a0-8394-2f7e8f270cd2.png" 
-                alt="Farely Logo" 
-                className="h-8 w-8 object-contain filter brightness-0 invert"
-              />
+              <Plane className="h-8 w-8 text-blue-400" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-white">
@@ -167,6 +196,21 @@ export const AuthPage = () => {
                 className="bg-slate-700 border-slate-600 text-white"
                 required
               />
+              {!isLogin && formData.password && (
+                <div className="mt-2 text-xs space-y-1">
+                  <div className="text-slate-400">Password must contain:</div>
+                  {passwordValidation.errors.map((error, index) => (
+                    <div key={index} className="text-red-400 flex items-center gap-1">
+                      <span>•</span> {error}
+                    </div>
+                  ))}
+                  {passwordValidation.isValid && (
+                    <div className="text-green-400 flex items-center gap-1">
+                      <span>✓</span> Password meets all requirements
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {!isLogin && (
@@ -190,7 +234,7 @@ export const AuthPage = () => {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-              disabled={loading}
+              disabled={loading || (!isLogin && !passwordValidation.isValid)}
             >
               {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
             </Button>

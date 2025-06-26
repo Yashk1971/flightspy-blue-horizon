@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Plane } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -35,8 +36,40 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
     { code: "IN", name: "India", currency: "INR" },
   ];
 
+  // Password validation
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return {
+      isValid: minLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar,
+      errors: [
+        !minLength && "At least 8 characters",
+        !hasUppercase && "One uppercase letter",
+        !hasLowercase && "One lowercase letter", 
+        !hasNumber && "One number",
+        !hasSpecialChar && "One special character (!@#$%^&*)"
+      ].filter(Boolean)
+    };
+  };
+
+  const passwordValidation = validatePassword(formData.password);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isLogin && !passwordValidation.isValid) {
+      toast({
+        title: "Password requirements not met",
+        description: "Please ensure your password meets all requirements.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -110,6 +143,11 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-md">
         <DialogHeader>
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-blue-500/20 rounded-full backdrop-blur-sm border border-blue-500/30">
+              <Plane className="h-8 w-8 text-blue-400" />
+            </div>
+          </div>
           <DialogTitle className="text-2xl font-bold text-center">
             {isLogin ? "Welcome Back" : "Join Farely"}
           </DialogTitle>
@@ -152,6 +190,21 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
               className="bg-slate-700 border-slate-600 text-white"
               required
             />
+            {!isLogin && formData.password && (
+              <div className="mt-2 text-xs space-y-1">
+                <div className="text-slate-400">Password must contain:</div>
+                {passwordValidation.errors.map((error, index) => (
+                  <div key={index} className="text-red-400 flex items-center gap-1">
+                    <span>•</span> {error}
+                  </div>
+                ))}
+                {passwordValidation.isValid && (
+                  <div className="text-green-400 flex items-center gap-1">
+                    <span>✓</span> Password meets all requirements
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {!isLogin && (
@@ -175,7 +228,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }: AuthModalProps) => {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-            disabled={loading}
+            disabled={loading || (!isLogin && !passwordValidation.isValid)}
           >
             {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
           </Button>
