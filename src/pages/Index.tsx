@@ -5,6 +5,7 @@ import { SearchForm } from "@/components/SearchForm";
 import { FlightResults } from "@/components/FlightResults";
 import { HeroSection } from "@/components/HeroSection";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { searchFlights, transformKiwiDataToFlight } from "@/services/kiwiApi";
 import { supabase } from "@/integrations/supabase/client";
 import { Flight } from "@/types/Flight";
@@ -17,6 +18,7 @@ const Index = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { user, loading: authLoading, signOut } = useAuth();
+  const { subscribed, subscription_tier } = useSubscription();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,6 +53,28 @@ const Index = () => {
 
     fetchUserProfile();
   }, [user]);
+
+  // Check for subscription success/cancel from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const subscription = urlParams.get('subscription');
+    
+    if (subscription === 'success') {
+      toast({
+        title: "Welcome to Farely Pro! 🎉",
+        description: "Your subscription is now active. Enjoy all premium features!",
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (subscription === 'cancelled') {
+      toast({
+        title: "Subscription Cancelled",
+        description: "You can still upgrade to Pro anytime to unlock premium features.",
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   const handleSearch = async (searchData: any) => {
     if (!user || !userProfile) {
@@ -154,8 +178,15 @@ const Index = () => {
     <div className="min-h-screen bg-slate-900">
       {/* Header with user info and sign out */}
       <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
-        <div className="text-white">
-          Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
+        <div className="flex items-center gap-4">
+          <div className="text-white">
+            Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
+          </div>
+          {subscribed && (
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-white text-xs font-medium">
+              Pro Member
+            </div>
+          )}
         </div>
         <Button 
           onClick={handleSignOut}
