@@ -55,11 +55,11 @@ export const AuthPage = () => {
   const passwordValidation = validatePassword(formData.password);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check if user is already logged in and redirect to home
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     };
     checkUser();
@@ -97,7 +97,7 @@ export const AuthPage = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate('/');
+          navigate('/', { replace: true });
         }
       } else {
         // Sign up
@@ -128,6 +128,7 @@ export const AuthPage = () => {
             title: "Account created!",
             description: "Please check your email to verify your account.",
           });
+          navigate('/', { replace: true });
         }
       }
     } catch (error) {
