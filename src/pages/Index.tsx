@@ -5,13 +5,14 @@ import { SearchForm } from "@/components/SearchForm";
 import { FlightResults } from "@/components/FlightResults";
 import { HeroSection } from "@/components/HeroSection";
 import { AuthModal } from "@/components/AuthModal";
+import { Header } from "@/components/Header";
+import { ProFeatures } from "@/components/ProFeatures";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { searchFlights, transformKiwiDataToFlight } from "@/services/kiwiApi";
 import { supabase } from "@/integrations/supabase/client";
 import { Flight } from "@/types/Flight";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -180,29 +181,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Header with user info and sign out */}
-      {user && (
-        <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="text-white">
-              Welcome, {userProfile?.name || user?.user_metadata?.name || user.email}
-            </div>
-            {subscribed && (
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-white text-xs font-medium">
-                Pro Member
-              </div>
-            )}
-          </div>
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            size="sm"
-            className="text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white bg-slate-800"
-          >
-            Sign Out
-          </Button>
-        </div>
-      )}
+      <Header onAuthClick={() => setShowAuthModal(true)} onSignOut={handleSignOut} />
 
       {!hasSearched ? (
         <>
@@ -210,9 +189,10 @@ const Index = () => {
           <div className="container mx-auto px-4 pb-16">
             <SearchForm onSearch={handleSearch} loading={loading} />
           </div>
+          <ProFeatures onAuthClick={() => setShowAuthModal(true)} />
         </>
       ) : (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8" style={{ paddingTop: '100px' }}>
           <div className="mb-8">
             <SearchForm onSearch={handleSearch} loading={loading} compact />
           </div>
