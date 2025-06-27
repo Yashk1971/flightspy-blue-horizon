@@ -9,7 +9,7 @@ import { Header } from "@/components/Header";
 import { ProFeatures } from "@/components/ProFeatures";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { searchFlights, transformKiwiDataToFlight } from "@/services/kiwiApi";
+import { searchFlights, transformAmadeusDataToFlight } from "@/services/amadeusApi";
 import { supabase } from "@/integrations/supabase/client";
 import { Flight } from "@/types/Flight";
 import { useToast } from "@/hooks/use-toast";
@@ -100,8 +100,8 @@ const Index = () => {
         passengers: searchData.passengers || 1
       });
 
-      // Search flights using Kiwi API
-      const kiwiResults = await searchFlights({
+      // Search flights using Amadeus API
+      const amadeusResults = await searchFlights({
         departure: searchData.departure,
         arrival: searchData.arrival,
         departureDate: searchData.departureDate,
@@ -110,9 +110,9 @@ const Index = () => {
         currency: userProfile.currency
       });
 
-      // Transform Kiwi data to our Flight interface
-      const transformedFlights = kiwiResults.map((kiwiFlight: any) => 
-        transformKiwiDataToFlight(kiwiFlight, currencySymbol)
+      // Transform Amadeus data to our Flight interface
+      const transformedFlights = amadeusResults.map((amadeusData: any) => 
+        transformAmadeusDataToFlight(amadeusData, currencySymbol)
       );
 
       setFlights(transformedFlights);
@@ -149,7 +149,7 @@ const Index = () => {
             airport: searchData?.arrival || "LAX",
             date: searchData?.departureDate || "2024-01-15"
           },
-          bookingUrl: "https://kiwi.com/flight/delta-299",
+          bookingUrl: "https://amadeus.com/flight/delta-299",
           currencySymbol: getCurrencySymbol(userProfile?.currency || 'USD')
         }
       ];
