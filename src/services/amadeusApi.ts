@@ -85,6 +85,7 @@ const getAccessToken = async () => {
   }
 
   try {
+    console.log('Requesting Amadeus access token...');
     const response = await fetch(`${BASE_URL}/v1/security/oauth2/token`, {
       method: 'POST',
       headers: {
@@ -97,14 +98,19 @@ const getAccessToken = async () => {
       }),
     });
 
+    const responseText = await response.text();
+    console.log('Amadeus OAuth response status:', response.status);
+    console.log('Amadeus OAuth response:', responseText);
+
     if (!response.ok) {
-      throw new Error(`OAuth error: ${response.status}`);
+      throw new Error(`OAuth error: ${response.status} - ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     accessToken = data.access_token;
     tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // Refresh 1 minute before expiry
     
+    console.log('Amadeus access token obtained successfully');
     return accessToken;
   } catch (error) {
     console.error('Error getting Amadeus access token:', error);
@@ -114,6 +120,7 @@ const getAccessToken = async () => {
 
 export const searchFlights = async (params: AmadeusSearchParams) => {
   try {
+    console.log('Searching flights with params:', params);
     const token = await getAccessToken();
     
     const searchParams = new URLSearchParams({
@@ -129,6 +136,7 @@ export const searchFlights = async (params: AmadeusSearchParams) => {
       searchParams.append('returnDate', params.returnDate);
     }
 
+    console.log('Making flight search request to Amadeus...');
     const response = await fetch(`${BASE_URL}/v2/shopping/flight-offers?${searchParams}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -136,11 +144,16 @@ export const searchFlights = async (params: AmadeusSearchParams) => {
       },
     });
 
+    const responseText = await response.text();
+    console.log('Amadeus flight search response status:', response.status);
+    console.log('Amadeus flight search response:', responseText);
+
     if (!response.ok) {
-      throw new Error(`Amadeus API error: ${response.status}`);
+      throw new Error(`Amadeus API error: ${response.status} - ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
+    console.log('Flight search successful, found', data.data?.length || 0, 'flights');
     return data.data || [];
   } catch (error) {
     console.error('Error searching flights:', error);
@@ -182,7 +195,7 @@ export const transformAmadeusDataToFlight = (amadeusData: AmadeusFlightData, cur
       airport: lastSegment.arrival.iataCode,
       date: new Date(lastSegment.arrival.at).toISOString().split('T')[0]
     },
-    bookingUrl: `https://www.amadeus.com/booking/${amadeusData.id}`, // Placeholder - you might want to implement actual booking
+    bookingUrl: `https://www.amadeus.com/en/book-flight/${amadeusData.id}`,
     currencySymbol
   };
 };
@@ -210,6 +223,11 @@ const getAirlineName = (code: string): string => {
     'CX': 'Cathay Pacific',
     'JL': 'Japan Airlines',
     'NH': 'ANA',
+    '6E': 'IndiGo',
+    'AI': 'Air India',
+    'SG': 'SpiceJet',
+    'G8': 'GoAir',
+    'UK': 'Vistara',
   };
   
   return airlineMap[code] || code;

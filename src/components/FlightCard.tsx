@@ -82,7 +82,7 @@ export const FlightCard = ({ flight, rank }: FlightCardProps) => {
             onClick={handleBooking}
             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold px-6 py-3 group-hover:scale-105 transition-transform duration-200"
           >
-            Book on Kiwi
+            Book Flight
             <ExternalLink className="w-4 h-4 ml-2" />
           </Button>
           <div className="text-xs text-slate-500 text-center">
