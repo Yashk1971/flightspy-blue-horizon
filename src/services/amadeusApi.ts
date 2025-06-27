@@ -71,7 +71,7 @@ export interface AmadeusFlightData {
 }
 
 const AMADEUS_API_KEY = "guZswTAQqgdJxKmkqM5GV00idpjCJeiF";
-const AMADEUS_API_SECRET = "your_secret_here"; // You'll need to provide this
+const AMADEUS_API_SECRET = "2XGcGyPdZBqQ1tcJ";
 const BASE_URL = "https://api.amadeus.com";
 
 // Store access token
