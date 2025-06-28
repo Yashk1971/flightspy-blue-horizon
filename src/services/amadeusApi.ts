@@ -72,7 +72,7 @@ export interface AmadeusFlightData {
 
 const AMADEUS_API_KEY = "guZswTAQqgdJxKmkqM5GV00idpjCJeiF";
 const AMADEUS_API_SECRET = "2XGcGyPdZBqQ1tcJ";
-const BASE_URL = "https://api.amadeus.com";
+const BASE_URL = "https://test.api.amadeus.com";
 
 // Store access token
 let accessToken: string | null = null;
@@ -129,7 +129,7 @@ export const searchFlights = async (params: AmadeusSearchParams) => {
       departureDate: params.departureDate,
       adults: (params.passengers || 1).toString(),
       currencyCode: params.currency || 'USD',
-      max: '10',
+      max: '5',
     });
 
     if (params.returnDate) {
