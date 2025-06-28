@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plane, Clock, ArrowRight, ExternalLink, Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface FlightCardProps {
   flight: Flight;
@@ -11,8 +12,31 @@ interface FlightCardProps {
 }
 
 export const FlightCard = ({ flight, rank }: FlightCardProps) => {
+  const { toast } = useToast();
+
   const handleBooking = () => {
-    window.open(flight.bookingUrl, '_blank');
+    // Since Amadeus test API doesn't provide direct booking URLs,
+    // we'll redirect to popular flight booking sites with search parameters
+    const departure = flight.departure.airport;
+    const arrival = flight.arrival.airport;
+    const date = flight.departure.date;
+    
+    // Try Google Flights first as it's most comprehensive
+    const googleFlightsUrl = `https://www.google.com/travel/flights/search?tfs=CBwQAhogEgoyMDI1LTA2LTI5agwIAhIIL20vMDJfMjg2cgwIAhIIL20vMDVxdGo&curr=USD&hl=en`;
+    
+    // Alternative: Expedia with search parameters
+    const expediaUrl = `https://www.expedia.com/Flights-Search?trip=oneway&leg1=from:${departure},to:${arrival},departure:${date}&passengers=adults:1&options=cabinclass:economy`;
+    
+    // Alternative: Kayak with search parameters
+    const kayakUrl = `https://www.kayak.com/flights/${departure}-${arrival}/${date}?sort=bestflight_a`;
+
+    toast({
+      title: "Redirecting to Book Flight",
+      description: `Opening booking options for ${flight.airline} flight from ${departure} to ${arrival}`,
+    });
+
+    // Open Google Flights in new tab
+    window.open(googleFlightsUrl, '_blank');
   };
 
   return (
@@ -86,7 +110,7 @@ export const FlightCard = ({ flight, rank }: FlightCardProps) => {
             <ExternalLink className="w-4 h-4 ml-2" />
           </Button>
           <div className="text-xs text-slate-500 text-center">
-            Best time to book: 2-3 weeks ahead
+            Opens booking options
           </div>
         </div>
       </div>
